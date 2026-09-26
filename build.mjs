@@ -1,9 +1,11 @@
 import fs from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { marked } from './marked.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
 const out = path.join(root, 'dist');
+const styleName = 'style.' + createHash('sha256').update(fs.readFileSync(path.join(root, 'style.css'))).digest('hex').slice(0, 12) + '.css';
 fs.mkdirSync(out, { recursive: true });
 const cfg = JSON.parse(fs.readFileSync(path.join(root, 'site.config.json'), 'utf8'));
 const esc = s => s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;');
@@ -36,7 +38,7 @@ for (const lang of ['zh','en']) {
  }).join('\n');
  const repo=cfg.repository ? `<a href="${esc(cfg.repository)}" target="_blank" rel="noopener">${t.repo} ↗</a>`:'';
  const html=`<!doctype html>
-<html lang="${lang==='zh'?'zh-CN':'en'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${t.desc}"><meta name="theme-color" content="#f5f6f2"><title>${t.title} · Interview Prep</title><link rel="icon" href="./assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./assets/style.css"><script defer src="./assets/app.js"></script></head>
+<html lang="${lang==='zh'?'zh-CN':'en'}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="${t.desc}"><meta name="theme-color" content="#f5f6f2"><title>${t.title} · Interview Prep</title><link rel="icon" href="./assets/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="./assets/${styleName}"><script defer src="./assets/app.js"></script></head>
 <body><a class="skip" href="#content">${t.skip}</a><header class="topbar"><a class="brand" href="./${lang==='zh'?'index.html':'en.html'}"><span class="logo">ip<span>.</span></span><span>Interview Prep<span class="brand-sub">THE HANDBOOK</span></span></a><div class="top-actions">${repo}<a id="language" href="./${t.file}" lang="${lang==='zh'?'en':'zh-CN'}">${t.switch} ↗</a></div></header>
 <div class="layout"><aside><p class="nav-label">${t.toc}</p><nav aria-label="${t.toc}">${nav.join('')}</nav><div class="progress-card"><p class="nav-label">${t.progress}</p><div class="progress-number"><strong id="done">0</strong><span id="total"></span></div><progress id="progress" value="0" max="${ids.length}" aria-label="${t.progress}"></progress><p id="storage-note">${t.saved}</p><button id="reset" class="quiet">${t.reset} ↺</button></div></aside>
 <main id="content"><section class="hero"><div class="eyebrow">${t.eyebrow}</div><h1>${t.intro}</h1><p>${t.desc}</p><div class="badges"><span>◷ ${t.minutes}</span><span>▤ ${t.sections}</span><span>✓ ${t.local}</span></div></section><div class="toolbar"><div class="tabs" role="group" aria-label="${lang==='zh'?'阅读模式':'Reading mode'}"><button id="guide" aria-pressed="true">${t.guide}</button><button id="quick" aria-pressed="false">${t.quick}</button></div><button id="print" class="quiet">${t.print}</button><a class="download" href="./${lang}.md" download>${t.download} ↓</a></div><div class="search-box"><span aria-hidden="true">⌕</span><input id="search" type="search" aria-label="${t.searchLabel}" placeholder="${t.search}"><span id="results" role="status"></span></div><p id="empty" hidden>${t.empty}</p><div id="articles">${articles}</div><footer>${t.footer}<span>Interview Prep Handbook · 中文 / English</span></footer></main></div></body></html>`;
@@ -44,6 +46,6 @@ for (const lang of ['zh','en']) {
  fs.copyFileSync(path.join(root,`${lang}.md`),path.join(out,`${lang}.md`));
 }
 fs.mkdirSync(path.join(out,'assets'),{recursive:true});
-for(const name of ['style.css','app.js','favicon.svg']) fs.copyFileSync(path.join(root,name),path.join(out,'assets',name));
+for(const name of ['style.css','app.js','favicon.svg']) fs.copyFileSync(path.join(root,name),path.join(out,'assets',name === 'style.css' ? styleName : name));
 fs.writeFileSync(path.join(out,'.nojekyll'),'');
 console.log(`Built 2 languages, 9 sections each, ${expected.length} stable task IDs per language.`);
